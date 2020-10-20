@@ -87,6 +87,12 @@ const Link = ({ active, children, onClick }) => {
 
 //container component
 class FilterLink extends React.Component {
+  //到底要不要写这个？
+  //此处有props
+  //在render里面接受props好像就不用写？
+  // constructor(props) {
+  //   super(props);
+  // }
   componentDidMount() {
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
@@ -116,10 +122,13 @@ class FilterLink extends React.Component {
 }
 
 const Footer = () => (
+  //这里<FilterLink />居然写三遍，如何简化？
   <p>
     Show:
-    <FilterLink filter="SHOW_ALL">All</FilterLink>{" "}
-    <FilterLink filter="SHOW_ACTIVE">Active</FilterLink>{" "}
+    <FilterLink filter="SHOW_ALL">All</FilterLink>
+    {", "}
+    <FilterLink filter="SHOW_ACTIVE">Active</FilterLink>
+    {", "}
     <FilterLink filter="SHOW_COMPLETED">Completed</FilterLink>
   </p>
 );
@@ -148,7 +157,7 @@ const TodoList = ({ todos, onTodoClick }) => (
   </ol>
 );
 
-const AddTodo = ({ onAddClick }) => {
+const AddTodo = () => {
   let input;
   return (
     <div>
@@ -159,7 +168,11 @@ const AddTodo = ({ onAddClick }) => {
       />
       <button
         onClick={() => {
-          onAddClick(input.value);
+          store.dispatch({
+            type: "ADD_TODO",
+            id: nextTodoId++,
+            text: input.value,
+          });
           input.value = "";
         }}
       >
@@ -182,45 +195,59 @@ const getVisibleTodos = (todos, filter) => {
   }
 };
 
+//to connect a presentational component to the redux store
+class VisibleTodoList extends React.Component {
+  //要不要写这个到底？
+  //此处无props
+  // constructor(props) {
+  //   super(props);
+  // }
+
+  componentDidMount() {
+    this.unsubscribe = store.subscribe(() => this.forceUpdate());
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+  render() {
+    const props = this.props;
+    const state = store.getState();
+
+    return (
+      <TodoList
+        todos={getVisibleTodos(state.todos, state.visibilityFilter)}
+        onTodoClick={(id) =>
+          store.dispatch({
+            type: "TOGGLE_TODO",
+            id,
+          })
+        }
+      />
+    );
+  }
+}
+
 let nextTodoId = 0;
 
 //single container component
 //specifies behavior
 //Dan abramov prefers to turn class components into functional components when possible
-const TodoApp = ({ todos, visibilityFilter }) => (
+const TodoApp = () => (
   <div>
-    <AddTodo
-      onAddClick={(text) =>
-        store.dispatch({
-          type: "ADD_TODO",
-          id: nextTodoId,
-          text,
-        })
-      }
-    />
-    <TodoList
-      todos={getVisibleTodos(todos, visibilityFilter)}
-      onTodoClick={(id) =>
-        store.dispatch({
-          type: "TOGGLE_TODO",
-          id,
-        })
-      }
-    />
+    <AddTodo />
+    <VisibleTodoList />
     <Footer />
   </div>
 );
 
-const render = () => {
-  ReactDOM.render(
-    <TodoApp {...store.getState()} />,
-    // todos={store.getState().todos}
-    // visibilityFilter={store.getState().visibilityFilter}
-    document.getElementById("root")
-  );
-};
+ReactDOM.render(
+  <TodoApp />,
+  // todos={store.getState().todos}
+  // visibilityFilter={store.getState().visibilityFilter}
+  document.getElementById("root")
+);
 
-store.subscribe(render);
-render();
-
-//太美了！
+//1. extracting presentational components
+//if there is too much props to pass
+//write container components around to specifies the behavior and lessen the complexity
