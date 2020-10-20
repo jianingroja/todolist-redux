@@ -63,8 +63,6 @@ const todoApp = combineReducers({
 //  visibilityFilter:visibilityFilter
 //  } 一开始写了又删掉了 15集
 
-const store = createStore(todoApp);
-
 //presentational component
 // provides data and behavior to presentational component
 //children从哪里传入的？
@@ -94,6 +92,7 @@ class FilterLink extends React.Component {
   //   super(props);
   // }
   componentDidMount() {
+    const { store } = this.props;
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
 
@@ -103,6 +102,8 @@ class FilterLink extends React.Component {
 
   render() {
     const props = this.props;
+    const { store } = props;
+
     const state = store.getState();
 
     return (
@@ -121,15 +122,21 @@ class FilterLink extends React.Component {
   }
 }
 
-const Footer = () => (
+const Footer = ({ store }) => (
   //这里<FilterLink />居然写三遍，如何简化？
   <p>
     Show:
-    <FilterLink filter="SHOW_ALL">All</FilterLink>
+    <FilterLink filter="SHOW_ALL" store={store}>
+      All
+    </FilterLink>
     {", "}
-    <FilterLink filter="SHOW_ACTIVE">Active</FilterLink>
+    <FilterLink filter="SHOW_ACTIVE" store={store}>
+      Active
+    </FilterLink>
     {", "}
-    <FilterLink filter="SHOW_COMPLETED">Completed</FilterLink>
+    <FilterLink filter="SHOW_COMPLETED" store={store}>
+      Completed
+    </FilterLink>
   </p>
 );
 
@@ -157,7 +164,7 @@ const TodoList = ({ todos, onTodoClick }) => (
   </ol>
 );
 
-const AddTodo = () => {
+const AddTodo = ({ store }) => {
   let input;
   return (
     <div>
@@ -204,6 +211,7 @@ class VisibleTodoList extends React.Component {
   // }
 
   componentDidMount() {
+    const { store } = this.props;
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
 
@@ -212,6 +220,8 @@ class VisibleTodoList extends React.Component {
   }
   render() {
     const props = this.props;
+    const { store } = props;
+    //要放在中间，否则 cannot access 'store' before initialization
     const state = store.getState();
 
     return (
@@ -233,21 +243,21 @@ let nextTodoId = 0;
 //single container component
 //specifies behavior
 //Dan abramov prefers to turn class components into functional components when possible
-const TodoApp = () => (
+const TodoApp = ({ store }) => (
   <div>
-    <AddTodo />
-    <VisibleTodoList />
-    <Footer />
+    <AddTodo store={store} />
+    <VisibleTodoList store={store} />
+    <Footer store={store} />
   </div>
 );
 
 ReactDOM.render(
-  <TodoApp />,
+  <TodoApp store={createStore(todoApp)} />,
   // todos={store.getState().todos}
   // visibilityFilter={store.getState().visibilityFilter}
   document.getElementById("root")
 );
 
 //1. extracting presentational components
-//if there is too much props to pass
-//write container components around to specifies the behavior and lessen the complexity
+//if there is too much props to pass then
+//2. write container components around to specifies the behavior and reduce the complexity
