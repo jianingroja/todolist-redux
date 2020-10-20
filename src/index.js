@@ -67,7 +67,7 @@ const store = createStore(todoApp);
 
 //functional component
 //children从哪里传入的？
-const FilterLink = ({ filter, currentFilter, children }) => {
+const FilterLink = ({ filter, currentFilter, children, onClick }) => {
   if (filter === currentFilter) {
     return <span>{children}</span>;
   }
@@ -76,14 +76,80 @@ const FilterLink = ({ filter, currentFilter, children }) => {
       href="#"
       onClick={(e) => {
         e.preventDefault();
-        store.dispatch({
-          type: "SET_VISIBILITY_FILTER",
-          filter,
-        });
+        onClick(filter);
       }}
     >
       {children}
     </a>
+  );
+};
+
+const Footer = ({ visibilityFilter, onFilterClick }) => (
+  <p>
+    Show:
+    <FilterLink
+      filter="SHOW_ALL"
+      currentFilter={visibilityFilter}
+      onClick={onFilterClick}
+    >
+      All
+    </FilterLink>{" "}
+    <FilterLink
+      filter="SHOW_ACTIVE"
+      currentFilter={visibilityFilter}
+      onClick={onFilterClick}
+    >
+      Active
+    </FilterLink>{" "}
+    <FilterLink
+      filter="SHOW_COMPLETED"
+      currentFilter={visibilityFilter}
+      onClick={onFilterClick}
+    >
+      Completed
+    </FilterLink>
+  </p>
+);
+
+//todo functional component, presentational component
+const Todo = ({ onClick, completed, text }) => (
+  <li
+    onClick={onClick}
+    style={{
+      textDecoration: completed ? "line-through" : "none",
+    }}
+  >
+    {text}
+  </li>
+);
+
+//presentational component
+const TodoList = ({ todos, onTodoClick }) => (
+  <ol>
+    {todos.map((todo) => (
+      <Todo key={todo.id} {...todo} onClick={() => onTodoClick(todo.id)} />
+    ))}
+  </ol>
+);
+
+const AddTodo = ({ onAddClick }) => {
+  let input;
+  return (
+    <div>
+      <input
+        ref={(node) => {
+          input = node;
+        }}
+      />
+      <button
+        onClick={() => {
+          onAddClick(input.value);
+          input.value = "";
+        }}
+      >
+        Add Todo
+      </button>
+    </div>
   );
 };
 
@@ -113,53 +179,33 @@ class TodoApp extends React.Component {
     const visibleTodos = getVisibleTodos(todos, visibilityFilter);
     return (
       <div>
-        <input
-          ref={(node) => {
-            this.input = node;
-          }}
-        />
-        <button
-          onClick={() => {
+        <AddTodo
+          onAddClick={(text) =>
             store.dispatch({
               type: "ADD_TODO",
-              text: this.input.value,
-              id: nextTodoId++,
-            });
-            this.input.value = "";
-          }}
-        >
-          Add Todo
-        </button>
-        <ol>
-          {visibleTodos.map((todo) => (
-            <li
-              key={todo.id}
-              onClick={() => {
-                store.dispatch({
-                  type: "TOGGLE_TODO",
-                  id: todo.id,
-                });
-              }}
-              style={{
-                textDecoration: todo.completed ? "line-through" : "none",
-              }}
-            >
-              {todo.text}
-            </li>
-          ))}
-        </ol>
-        <p>
-          Show:
-          <FilterLink filter="SHOW_ALL" currentFilter={visibilityFilter}>
-            All
-          </FilterLink>{" "}
-          <FilterLink filter="SHOW_ACTIVE" currentFilter={visibilityFilter}>
-            Active
-          </FilterLink>{" "}
-          <FilterLink filter="SHOW_COMPLETED" currentFilter={visibilityFilter}>
-            Completed
-          </FilterLink>
-        </p>
+              id: nextTodoId,
+              text,
+            })
+          }
+        />
+        <TodoList
+          todos={visibleTodos}
+          onTodoClick={(id) =>
+            store.dispatch({
+              type: "TOGGLE_TODO",
+              id,
+            })
+          }
+        />
+        <Footer
+          visibilityFilter={visibilityFilter}
+          onFilterClick={(filter) =>
+            store.dispatch({
+              type: "SET_VISIBILITY_FILTER",
+              filter,
+            })
+          }
+        />
       </div>
     );
   }
