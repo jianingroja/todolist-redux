@@ -1,26 +1,38 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import ReactDOM from "react-dom";
+import { createStore } from "redux";
+import { combineReducers } from "redux";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+let nextTodoId = 0;
+class TodoApp extends React.Component {
+  render() {
+    <div>
+      <button
+        onClick={() => {
+          store.dispatch({
+            type: "ADD_TODO",
+            text: "Test",
+            id: nextTodoId++,
+          });
+        }}
+      >
+        Add Todo
+      </button>
+      <ul>
+        {this.props.todos.map((todo) => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </div>;
+  }
 }
 
-export default App;
+const render = () => {
+  ReactDOM.render(
+    <TodoApp todos={store.getState().todos} />,
+    document.getElementById("root")
+  );
+};
+
+store.subscribe(render);
+render();
