@@ -1,12 +1,8 @@
 import React from "react";
-import PropTypes from "prop-types";
-// //注意：
-// 从 React v15.5 开始 ，
-// React.PropTypes 助手函数已被弃用，
-// 我们建议使用 prop-types 库 来定义contextTypes。
 import ReactDOM from "react-dom";
-//import Redux from "redux";
+import { Provider } from "react-redux";
 import { createStore } from "redux";
+import { connect } from "react-redux";
 import { combineReducers } from "redux";
 
 //reducer一号的孩子
@@ -88,46 +84,22 @@ const Link = ({ active, children, onClick }) => {
   );
 };
 
-//container component
-class FilterLink extends React.Component {
-  //到底要不要写这个？
-  //此处有props
-  //在render里面接受props好像就不用写？
-  // constructor(props) {
-  //   super(props);
-  // }
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => this.forceUpdate());
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
-  render() {
-    const props = this.props;
-    const { store } = this.context;
-    const state = store.getState();
-
-    return (
-      <Link
-        active={props.filter === state.visibilityFilter}
-        onClick={() =>
-          store.dispatch({
-            type: "SET_VISIBILITY_FILTER",
-            filter: props.filter,
-          })
-        }
-      >
-        {props.children}
-      </Link>
-    );
-  }
-}
-FilterLink.contextTypes = {
-  store: PropTypes.object,
+const mapStateToLinkProps = (state, ownProps) => {
+  return {
+    active: ownProps.filter === state.visibilityFilter,
+  };
 };
+const mapDispatchToLinkProps = (dispatch, ownProps) => {
+  return {
+    onClick: () => {
+      dispatch({
+        type: "SET_VISIBILITY_FILTER",
+        filter: ownProps.filter,
+      });
+    },
+  };
+};
+const FilterLink = connect(mapStateToLinkProps, mapDispatchToLinkProps)(Link);
 
 const Footer = () => (
   //这里<FilterLink />居然写三遍，如何简化？
@@ -165,7 +137,9 @@ const TodoList = ({ todos, onTodoClick }) => (
   </ol>
 );
 
-const AddTodo = (props, { store }) => {
+let nextTodoId = 0;
+
+let AddTodo = ({ dispatch }) => {
   let input;
   return (
     <div>
@@ -176,7 +150,7 @@ const AddTodo = (props, { store }) => {
       />
       <button
         onClick={() => {
-          store.dispatch({
+          dispatch({
             type: "ADD_TODO",
             id: nextTodoId++,
             text: input.value,
@@ -189,9 +163,7 @@ const AddTodo = (props, { store }) => {
     </div>
   );
 };
-AddTodo.contextTypes = {
-  store: PropTypes.object,
-};
+AddTodo = connect()(AddTodo);
 
 const getVisibleTodos = (todos, filter) => {
   switch (filter) {
@@ -206,46 +178,24 @@ const getVisibleTodos = (todos, filter) => {
   }
 };
 
-//to connect a presentational component to the redux store
-class VisibleTodoList extends React.Component {
-  //要不要写这个到底？
-  //此处无props
-  // constructor(props) {
-  //   super(props);
-  // }
-
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => this.forceUpdate());
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-  render() {
-    const props = this.props;
-    const { store } = this.context;
-    //要放在中间，否则 cannot access 'store' before initialization
-    const state = store.getState();
-
-    return (
-      <TodoList
-        todos={getVisibleTodos(state.todos, state.visibilityFilter)}
-        onTodoClick={(id) =>
-          store.dispatch({
-            type: "TOGGLE_TODO",
-            id,
-          })
-        }
-      />
-    );
-  }
-}
-VisibleTodoList.contextTypes = {
-  store: PropTypes.object,
+const mapStateToTodoListProps = (state) => {
+  return {
+    todos: getVisibleTodos(state.todos, state.visibilityFilter),
+  };
 };
-
-let nextTodoId = 0;
+const mapDispatchToTodoListProps = (dispatch) => {
+  return {
+    onTodoClick: (id) =>
+      dispatch({
+        type: "TOGGLE_TODO",
+        id,
+      }),
+  };
+};
+const VisibleTodoList = connect(
+  mapStateToTodoListProps,
+  mapDispatchToTodoListProps
+)(TodoList);
 
 //single container component
 //specifies behavior
@@ -257,20 +207,6 @@ const TodoApp = () => (
     <Footer />
   </div>
 );
-
-class Provider extends React.Component {
-  getChildContext() {
-    return {
-      store: this.props.store,
-    };
-  }
-  render() {
-    return this.props.children;
-  }
-}
-Provider.childContextTypes = {
-  store: PropTypes.object,
-}; // absolutely required
 
 ReactDOM.render(
   <Provider store={createStore(todoApp)}>
