@@ -1,4 +1,9 @@
 import React from "react";
+import PropTypes from "prop-types";
+// //注意：
+// 从 React v15.5 开始 ，
+// React.PropTypes 助手函数已被弃用，
+// 我们建议使用 prop-types 库 来定义contextTypes。
 import ReactDOM from "react-dom";
 //import Redux from "redux";
 import { createStore } from "redux";
@@ -92,7 +97,7 @@ class FilterLink extends React.Component {
   //   super(props);
   // }
   componentDidMount() {
-    const { store } = this.props;
+    const { store } = this.context;
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
 
@@ -102,8 +107,7 @@ class FilterLink extends React.Component {
 
   render() {
     const props = this.props;
-    const { store } = props;
-
+    const { store } = this.context;
     const state = store.getState();
 
     return (
@@ -121,22 +125,19 @@ class FilterLink extends React.Component {
     );
   }
 }
+FilterLink.contextTypes = {
+  store: PropTypes.object,
+};
 
-const Footer = ({ store }) => (
+const Footer = () => (
   //这里<FilterLink />居然写三遍，如何简化？
   <p>
     Show:
-    <FilterLink filter="SHOW_ALL" store={store}>
-      All
-    </FilterLink>
+    <FilterLink filter="SHOW_ALL">All</FilterLink>
     {", "}
-    <FilterLink filter="SHOW_ACTIVE" store={store}>
-      Active
-    </FilterLink>
+    <FilterLink filter="SHOW_ACTIVE">Active</FilterLink>
     {", "}
-    <FilterLink filter="SHOW_COMPLETED" store={store}>
-      Completed
-    </FilterLink>
+    <FilterLink filter="SHOW_COMPLETED">Completed</FilterLink>
   </p>
 );
 
@@ -164,7 +165,7 @@ const TodoList = ({ todos, onTodoClick }) => (
   </ol>
 );
 
-const AddTodo = ({ store }) => {
+const AddTodo = (props, { store }) => {
   let input;
   return (
     <div>
@@ -187,6 +188,9 @@ const AddTodo = ({ store }) => {
       </button>
     </div>
   );
+};
+AddTodo.contextTypes = {
+  store: PropTypes.object,
 };
 
 const getVisibleTodos = (todos, filter) => {
@@ -211,7 +215,7 @@ class VisibleTodoList extends React.Component {
   // }
 
   componentDidMount() {
-    const { store } = this.props;
+    const { store } = this.context;
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
 
@@ -220,7 +224,7 @@ class VisibleTodoList extends React.Component {
   }
   render() {
     const props = this.props;
-    const { store } = props;
+    const { store } = this.context;
     //要放在中间，否则 cannot access 'store' before initialization
     const state = store.getState();
 
@@ -237,27 +241,45 @@ class VisibleTodoList extends React.Component {
     );
   }
 }
+VisibleTodoList.contextTypes = {
+  store: PropTypes.object,
+};
 
 let nextTodoId = 0;
 
 //single container component
 //specifies behavior
 //Dan abramov prefers to turn class components into functional components when possible
-const TodoApp = ({ store }) => (
+const TodoApp = () => (
   <div>
-    <AddTodo store={store} />
-    <VisibleTodoList store={store} />
-    <Footer store={store} />
+    <AddTodo />
+    <VisibleTodoList />
+    <Footer />
   </div>
 );
 
+class Provider extends React.Component {
+  getChildContext() {
+    return {
+      store: this.props.store,
+    };
+  }
+  render() {
+    return this.props.children;
+  }
+}
+Provider.childContextTypes = {
+  store: PropTypes.object,
+}; // absolutely required
+
 ReactDOM.render(
-  <TodoApp store={createStore(todoApp)} />,
-  // todos={store.getState().todos}
-  // visibilityFilter={store.getState().visibilityFilter}
+  <Provider store={createStore(todoApp)}>
+    <TodoApp />
+  </Provider>,
   document.getElementById("root")
 );
 
+//Dan Abramov suggestions:
 //1. extracting presentational components
 //if there is too much props to pass then
 //2. write container components around to specifies the behavior and reduce the complexity
