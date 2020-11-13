@@ -1,0 +1,49 @@
+.app {
+  width: 400px;
+  height: auto;
+  border-radius: 3px;
+  margin: 20vh auto;
+  font-size: 20px;
+  font-family: "Lato", sans-serif;
+  background-color: rgb(247, 201, 160);
+  text-align: center;
+}
+
+input,
+button {
+  border: none;
+  margin: 1rem;
+  padding: 0.5rem;
+  border-radius: 3px;
+  outline: none;
+  font-size: 1rem;
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  color: rgb(121, 88, 88);
+}
+
+h2 {
+  padding-top: 1rem;
+  color: rgb(116, 44, 44);
+}
+
+li {
+  margin: 1rem 0rem;
+  font-weight: 700;
+  color: rgb(116, 44, 44);
+  text-align: left;
+}
+
+.footer {
+  margin-top: 2rem;
+  padding-bottom: 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  font-weight: 400;
+  color: rgb(121, 88, 88);
+}
+
+a {
+  color: rgb(71, 105, 112);
+}
